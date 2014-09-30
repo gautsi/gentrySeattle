@@ -12,6 +12,8 @@ class NbdPred:
     
     :param list loc_and_n: the data used to build a predictor, as a list of places. Each place is a list of two floats and a str; the two floats are the location of the place, and the str is the neighborhood the place belongs to.
     
+    >>> from nbdtools.nbdpred import NbdPred 
+    
     """
     
     def __init__(self, loc_and_n):
