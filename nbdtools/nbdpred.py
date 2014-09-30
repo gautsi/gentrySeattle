@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 
@@ -12,7 +13,11 @@ class NbdPred:
     
     :param list loc_and_n: the data used to build a predictor, as a list of places. Each place is a list of two floats and a str; the two floats are the location of the place, and the str is the neighborhood the place belongs to.
     
-    >>> from nbdtools.nbdpred import NbdPred 
+    We use the following example throughout.
+    
+    >>> from nbdtools.nbdpred import NbdPred
+    >>> loc_and_n = [[0, 0, 'A'], [0, 1, 'A'], [2, 0, 'B'], [2, 1, 'B']] 
+    >>> npred = NbdPred(loc_and_n)
     
     """
     
@@ -42,22 +47,31 @@ class NbdPred:
         
         #Get the lats and longs
         self.latis = [r[0] for r in self.loc_and_n]
-        self.longis =  [r[1] for r in self.loc_and_n]        
-            
-        #make a neighborhood predictor (nearest neighbor) and compute the classification rate
-        self.NN, self.class_rate = self.make_predictor()
+        self.longis =  [r[1] for r in self.loc_and_n]
         
-        
-        
-    def make_predictor(self):
+
+    def make_predictor(self, train_percent):
         """
         Split the data set into training and test sets, return a nearest neighbor predictor trained on the training set and the classification rate on the test set.
+        
+        Parameters
+        __________
+        
+        :param float train_percent: the percentage of the data set that will go into the training set
         
         Returns
         _______
         
         :return: a nearest neighbor predictor and its classification rate
-        :rtype: sklearn.neighbors.KNeighborsClassifier
+        :rtype: :class:`sklearn.neighbors.KNeighborsClassifier`, float
+        
+        >>> nnclassifier, classrate = npred.make_predictor(train_percent=0.5)
+        >>> print classrate
+        1.0
+        >>> print nnclassifier.predict([0,2])
+        ['A']
+        >>> print nnclassifier.predict([3,0])
+        ['B']
         
         """
         
@@ -73,7 +87,7 @@ class NbdPred:
         
         #fill in the rest of the train data
         l = [ind for ind  in xrange(len(self.loc_and_n)) if not ind in train_data_indices]
-        s = int(datasize*0.9 - len(train_data_indices))
+        s = int(datasize*train_percent - len(train_data_indices))
         train_data_indices += list(np.random.choice(a = l, size = s, replace = False))
         
         #make the train and test data sets
@@ -81,15 +95,15 @@ class NbdPred:
         
         test_data_indices = [ind for ind in xrange(len(self.loc_and_n)) if not ind in train_data_indices]
         test_data = [self.loc_and_n[ind] for ind in test_data_indices]
-        
+
         #train a nearest neighbor classifier
-        NN = neighbors.KNeighborsClassifier(n_neighbors=1)
+        NN = KNeighborsClassifier(n_neighbors=1)
         NN.fit([place[:2] for place in train_data], [place[2] for place in train_data])
         
         #what's the classification rate on the test set?
         class_rate = sum([NN.predict(place[:2]) == place[2] for place in test_data])/float(len(test_data))
         
-        return NN, class_rate
+        return NN, class_rate[0]
     
     def plot_decision_regions(self, points = True):
         xx, yy = np.meshgrid(np.arange(min(self.longis), max(self.longis), 0.0005), np.arange(min(self.latis), max(self.latis), 0.0005))
