@@ -1,10 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn import neighbors
+from sklearn.neighbors import KNeighborsClassifier
 
 
 class NbdPred:
-    """A neighborhood predictor."""
+    """
+    A neighborhood predictor class which takes as a parameter a list of places whose neighborhood is known. The predictor is nearest neighbor.  
+    
+    Parameters
+    __________
+    
+    :param list loc_and_n: the data used to build a predictor, as a list of places. Each place is a list of two floats and a str; the two floats are the location of the place, and the str is the neighborhood the place belongs to.
+    
+    """
     
     def __init__(self, loc_and_n):
         
@@ -40,6 +48,16 @@ class NbdPred:
         
         
     def make_predictor(self):
+        """
+        Split the data set into training and test sets, return a nearest neighbor predictor trained on the training set and the classification rate on the test set.
+        
+        Returns
+        _______
+        
+        :return: a nearest neighbor predictor and its classification rate
+        :rtype: sklearn.neighbors.KNeighborsClassifier
+        
+        """
         
         #divide the data into test and train: 90% train, 10% test
         datasize = len(self.loc_and_n)
