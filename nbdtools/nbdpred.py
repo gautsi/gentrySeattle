@@ -25,14 +25,15 @@ class NbdPred:
         
         self.loc_and_n = loc_and_n
         
-        #Get the set of neighborhoods
         self.neighborhoods = set(zip(*loc_and_n)[2])
+        """The set of neighborhoods."""
 
-        #make a list of neighs (helpful for plotting and colors)
+        #(helpful for plotting and colors)
         self.neighborhoods_list = sorted(list(self.neighborhoods), reverse = True)
+        """The list of neighborhoods.""" 
         
-        #the number of neighborhoods
         self.num_neighborhoods = len(self.neighborhoods_list)
+        """The number of neighborhoods."""
         
         #make a frequency dictionary
         self.nfreq = {n : 0 for n in self.neighborhoods}
@@ -65,6 +66,9 @@ class NbdPred:
         :return: a nearest neighbor predictor and its classification rate
         :rtype: :class:`sklearn.neighbors.KNeighborsClassifier`, float
         
+        >>> from nbdtools.nbdpred import NbdPred
+        >>> loc_and_n = [[0, 0, 'A'], [0, 1, 'A'], [2, 0, 'B'], [2, 1, 'B']] 
+        >>> npred = NbdPred(loc_and_n)
         >>> nnclassifier, classrate = npred.make_predictor(train_percent=0.5)
         >>> print classrate
         1.0
