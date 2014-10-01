@@ -1,5 +1,6 @@
 numpy
 scipy
+mock
 scikit-learn
 matplotlib
 sqlalchemy
