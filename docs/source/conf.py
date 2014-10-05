@@ -73,7 +73,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Gentrification in Seattle'
+project = u'Seattle Neighborhood Analysis Tools'
 copyright = u'2014, Yao Gbanaglo and Gautam Sisodia'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -206,7 +206,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GentrificationinSeattledoc'
+htmlhelp_basename = 'SeattleNeighborhoodAnalysisToolsdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -226,7 +226,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'GentrificationinSeattle.tex', u'Gentrification in Seattle Documentation',
+  ('index', 'SeattleNeighborhoodAnalysisTools.tex', u'Seattle Neighborhood Analysis Tools Documentation',
    u'Yao Gbanaglo and Gautam Sisodia', 'manual'),
 ]
 
@@ -256,7 +256,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'gentrificationinseattle', u'Gentrification in Seattle Documentation',
+    ('index', 'seattleneighborhoodanalysistools', u'Seattle Neighborhood Analysis Tools',
      [u'Yao Gbanaglo and Gautam Sisodia'], 1)
 ]
 
@@ -270,8 +270,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'GentrificationinSeattle', u'Gentrification in Seattle Documentation',
-   u'Yao Gbanaglo and Gautam Sisodia', 'GentrificationinSeattle', 'One line description of project.',
+  ('index', 'SeattleNeighborhoodAnalysisTools', u'Seattle Neighborhood Analysis Tools',
+   u'Yao Gbanaglo and Gautam Sisodia', 'SeattleNeighborhoodAnalysisTools', 'One line description of project.',
    'Miscellaneous'),
 ]
 

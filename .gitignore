@@ -1,0 +1,17 @@
+*.pyc
+*.ipynb
+privatedb.py
+*.log
+*~
+*.cls
+*.tex
+*.toc
+*.out
+*.ind
+*.ilg
+*.idx
+*.aux
+comedians_to_mysql.py
+.doctrees/
+*.sty
+
