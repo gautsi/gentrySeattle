@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 
 
-class NbdPred:
+class NbdPred(object):
     """
     A neighborhood predictor class which takes as a parameter a list of places whose neighborhood is known. The predictor is nearest neighbor.  
     
