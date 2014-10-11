@@ -1,4 +1,5 @@
 import pandas as pd
+from sqlalchemy import create_engine, MetaData
 
 #data for testing purposes
 testdata=\
@@ -17,48 +18,107 @@ val	lat	lon	rand	neighborhood	date
 -0.4510013713	7.2112883069	-3.3197442209	0.9224957069	A	6/20/1986
 -1.4786966797	-8.637564606	-1.0909260344	0.4966851496	B	10/13/1987
 -6.0590357706	0.8749491768	0.4776441725	0.5864697497	A	10/13/1987
--9.0557034221	-9.8762504151	-0.0184722943	0.5855213949	A	10/13/1987
-1.0418056976	3.2738893712	-1.7843903555	0.7032793853	A	6/20/1986
-9.3120111385	9.2805616744	3.1015036488	0.4999235398	B	10/13/1987
--5.4281971278	3.9662748063	3.8907729974	0.6531644475	A	10/13/1987
-1.0093759513	-9.6628873236	-7.732220632	0.9217200647	A	6/20/1986
-4.7918236535	-5.4886831669	-0.2459997917	0.0998065416	B	1/1/2000
 """
 
-def get_csv_data(filename, nbdname, latname, longname, datename, sep='\t'):
+def get_csv_data(filename, nbdname=None, latname='latitude', longname='longitude', datename='date', sep='\t'):
     """
-    Read neighborhood data from a csv and make a Dataframe compatible with :class:`NBDDataFrame`.
+    Read neighborhood data from a csv into a DataFrame compatible with :class:`NBDDataFrame`. The csv data should have at the least latitude and longitude columns with names *latname* and *longname*, and a date column with name *datename*. A neighborhood column with name *nbdname* is optional.
     
     Parameters:
     ___________
     
     :param str filename: the name of the csv file
-    :param str nbdname: the name of the neighborhood column
-    :param str latname: the name of the latitude column
-    :param str longname: the name of the longitude column
-    :param str datename: the name of the date column
-    :param str sep: the separation character
+    :param str nbdname: (optional) the name of the neighborhood column is there is one, default is None
+    :param str latname: the name of the latitude column, default is 'latitude'
+    :param str longname: the name of the longitude column, default is 'longitude'
+    :param str datename: the name of the date column, default is 'date'
+    :param str sep: the separation character, default is tab
     
-    >>> fil = open('test.csv', 'w')
-    >>> fil.write(testdata)
+    Returns:
+    ________
+    
+    :return: a DataFrame compatible with :class:`NBDDataFrame`
+    :rtype: DataFrame
+    
+    For example,
+    
+    >>> from datatools.nbddataframe import testdata, get_csv_data
+    >>> fil = open('test.csv', 'w') #make a test csv file
+    >>> fil.write(testdata) #write data randomly generated for test purposes 
     >>> fil.close()
     >>> df = get_csv_data(filename='test.csv', nbdname='neighborhood', latname='lat', longname='lon', datename='date', sep='\t')
+    >>> df.head()
+            val  latitude  longitude      rand nbd       date
+    0  4.076444 -0.967943  -0.618529  0.127659   B 2000-01-01
+    1  4.252051  3.553520   5.001326  0.875592   A 1986-06-20
+    2  1.322697 -3.535070  -0.303334  0.365462   B 1987-10-13
+    3 -9.362756 -0.694518   9.115702  0.095750   B 2000-01-01
+    4  7.277396  5.495874   1.116469  0.171634   B 2000-01-01
     >>> df.loc[0, 'nbd']
     'B'
     >>> df.mean().loc['latitude']
-    -0.61524730591052623
+    -0.24481567373846144
         
     """
 
     df = pd.read_csv(filename, sep='\t', parse_dates=[datename])
-    df.rename(columns={nbdname:'nbd', latname:'latitude', longname:'longitude', datename:'date'}, inplace=True)
+    df.rename(columns={latname:'latitude', longname:'longitude', datename:'date'}, inplace=True)
+    if nbdname:
+        df.rename(columns={nbdname:'nbd'}, inplace=True)
+    
+    return df
+
+def get_db_data(engine, tablename='data', nbdname=None, latname='latitude', longname='longitude', datename='date'):
+    """
+    Read neighborhood data from a database into a DataFrame compatible with :class:`NBDDataFrame`. The table should have at the least latitude and longitude columns with names *latname* and *longname*, and a date column with name *datename*. A neighborhood column with name *nbdname* is optional.
+    
+    Parameters:
+    ___________
+    
+    :param sqlalchemy.engine.base.Engine engine: the database engine
+    :param str tablename: the name of the database table, default is 'data'
+    :param str nbdname: (optional) the name of the neighborhood column is there is one, default is None
+    :param str latname: the name of the latitude column, default is 'latitude'
+    :param str longname: the name of the longitude column, default is 'longitude'
+    :param str datename: the name of the date column, default is 'date'
+    
+    Returns:
+    ________
+    
+    :return: a DataFrame compatible with :class:`NBDDataFrame`
+    :rtype: DataFrame
+    
+    """
+        
+    df = pd.read_sql_table(table_name=tablename, con=engine, parse_dates=[datename])
+    df.rename(columns={latname:'latitude', longname:'longitude', datename:'date'}, inplace=True)
+    if nbdname:
+        df.rename(columns={nbdname:'nbd'}, inplace=True)
     
     return df
     
+def make_db(nbddf, name=None):
+    """
+    Write :class:`NBDDataFrame` data into a SQLite database.
+    
+    Parameters:
+    ___________
+    
+    :param NBDDataFrame nbddf: the :class:`NBDDataFrame` object containing the data
+    :param str name: the name of the database; if no name is given, the database will be in-memory-only, default is None
+    
+    """
+    #make the engine and connection
+    if name is None:
+        engine = create_engine('sqlite://')
+    else:
+        engine = create_engine('sqlite:///{}.db'.format(name))
+    
+    conn = engine.connect()   
 
 class NBDDataFrame(object):
     """
-    A neihborhood data cleaner and preliminary analyzer.
+    A neighborhood data cleaner and preliminary analyzer.
     
     Parameters:
     ___________
