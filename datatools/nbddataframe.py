@@ -70,12 +70,12 @@ def get_csv_data(filename, nbdname=None, latname='latitude', longname='longitude
 
 def get_db_data(engine, tablename='data', nbdname=None, latname='latitude', longname='longitude', datename='date'):
     """
-    Read neighborhood data from a database into a DataFrame compatible with :class:`NBDDataFrame`. The table should have at the least latitude and longitude columns with names *latname* and *longname*, and a date column with name *datename*. A neighborhood column with name *nbdname* is optional.
+    Read neighborhood data from a database into a pandas.core.frame.DataFrame compatible with :class:`NBDDataFrame`. The table should have at the least latitude and longitude columns with names *latname* and *longname*, and a date column with name *datename*. A neighborhood column with name *nbdname* is optional.
     
     Parameters:
     ___________
     
-    :param sqlalchemy.engine.base.Engine engine: the database engine
+    :param sqlalchemy.engine.Engine engine: the database engine
     :param str tablename: the name of the database table, default is 'data'
     :param str nbdname: (optional) the name of the neighborhood column is there is one, default is None
     :param str latname: the name of the latitude column, default is 'latitude'
@@ -86,7 +86,7 @@ def get_db_data(engine, tablename='data', nbdname=None, latname='latitude', long
     ________
     
     :return: a DataFrame compatible with :class:`NBDDataFrame`
-    :rtype: DataFrame
+    :rtype: pandas.core.frame.DataFrame
     
     """
         
@@ -108,6 +108,7 @@ def make_db(nbddf, name=None):
     :param str name: the name of the database; if no name is given, the database will be in-memory-only, default is None
     
     """
+    
     #make the engine and connection
     if name is None:
         engine = create_engine('sqlite://')
