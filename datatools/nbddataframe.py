@@ -22,17 +22,32 @@ val	lat	lon	rand	neighborhood	date
 
 def get_csv_data(filename, nbdname=None, latname='latitude', longname='longitude', datename='date', sep='\t'):
     """
-    Read neighborhood data from a csv into a DataFrame compatible with :class:`NBDDataFrame`. The csv data should have at the least latitude and longitude columns with names *latname* and *longname*, and a date column with name *datename*. A neighborhood column with name *nbdname* is optional.
+    Read neighborhood data from a csv into a pandas.core.frame.DataFrame
+    compatible with :class:`NBDDataFrame`. The csv data should have at
+    the least latitude and longitude columns with names *latname* and
+    *longname*, and a date column with name *datename*. A neighborhood
+    column with name *nbdname* is optional.
     
     Parameters:
     ___________
     
-    :param str filename: the name of the csv file
-    :param str nbdname: (optional) the name of the neighborhood column is there is one, default is None
-    :param str latname: the name of the latitude column, default is 'latitude'
-    :param str longname: the name of the longitude column, default is 'longitude'
-    :param str datename: the name of the date column, default is 'date'
-    :param str sep: the separation character, default is tab
+    :param str filename: 
+        the name of the csv file
+        
+    :param str nbdname: 
+        (optional) the name of the neighborhood column is there is one, default is None
+    
+    :param str latname: 
+        the name of the latitude column, default is 'latitude'
+    
+    :param str longname: 
+        the name of the longitude column, default is 'longitude'
+    
+    :param str datename: 
+        the name of the date column, default is 'date'
+    
+    :param str sep: 
+        the separation character, default is tab
     
     Returns:
     ________
@@ -46,7 +61,10 @@ def get_csv_data(filename, nbdname=None, latname='latitude', longname='longitude
     >>> fil = open('test.csv', 'w') #make a test csv file
     >>> fil.write(testdata) #write data randomly generated for test purposes 
     >>> fil.close()
-    >>> df = get_csv_data(filename='test.csv', nbdname='neighborhood', latname='lat', longname='lon', datename='date', sep='\t')
+    >>> df = get_csv_data(
+    ...                   filename='test.csv', nbdname='neighborhood',
+    ...                   latname='lat', longname='lon', datename='date', sep='\t'
+    ... )
     >>> df.head()
             val  latitude  longitude      rand nbd       date
     0  4.076444 -0.967943  -0.618529  0.127659   B 2000-01-01
@@ -68,25 +86,61 @@ def get_csv_data(filename, nbdname=None, latname='latitude', longname='longitude
     
     return df
 
-def get_db_data(engine, tablename='data', nbdname=None, latname='latitude', longname='longitude', datename='date'):
+
+def get_db_data(engine, tablename='nbddata', nbdname=None, latname='latitude', longname='longitude', datename='date', index_col=None):
     """
-    Read neighborhood data from a database into a pandas.core.frame.DataFrame compatible with :class:`NBDDataFrame`. The table should have at the least latitude and longitude columns with names *latname* and *longname*, and a date column with name *datename*. A neighborhood column with name *nbdname* is optional.
+    Read neighborhood data from a database into a pandas.core.frame.DataFrame 
+    compatible with :class:`NBDDataFrame`. The table should have at the least 
+    latitude and longitude columns with names *latname* and *longname*, and a 
+    date column with name *datename*. A neighborhood column with name *nbdname* is optional.
     
     Parameters:
     ___________
     
-    :param sqlalchemy.engine.Engine engine: the database engine
-    :param str tablename: the name of the database table, default is 'data'
-    :param str nbdname: (optional) the name of the neighborhood column is there is one, default is None
-    :param str latname: the name of the latitude column, default is 'latitude'
-    :param str longname: the name of the longitude column, default is 'longitude'
-    :param str datename: the name of the date column, default is 'date'
+    :param sqlalchemy.engine.Engine engine: 
+        the database engine
+        
+    :param str tablename: 
+        the name of the database table, default is 'nbddata'
+        
+    :param str nbdname: 
+        (optional) the name of the neighborhood column if
+        there is one, default is None
+        
+    :param str latname: 
+        the name of the latitude column, default is 'latitude'
+        
+    :param str longname: 
+        the name of the longitude column, default is 'longitude'
+        
+    :param str datename: 
+        the name of the date column, default is 'date'
+        
+    :param str index_col:
+        the name of the index column if there is one, default is None 
     
     Returns:
     ________
     
     :return: a DataFrame compatible with :class:`NBDDataFrame`
     :rtype: pandas.core.frame.DataFrame
+    
+    For example,
+
+    >>> from datatools.nbddataframe import testdata, get_csv_data, NBDDataFrame, make_db, get_db_data
+    >>> fil = open('test.csv', 'w') #make a test csv file
+    >>> fil.write(testdata) #write data randomly generated for test purposes 
+    >>> fil.close()
+    >>> df = get_csv_data(
+    ...                   filename='test.csv', nbdname='neighborhood',
+    ...                   latname='lat', longname='lon', datename='date', sep='\t'
+    ... )
+    >>> neigh_dataframe = NBDDataFrame(df)
+    >>> engine = make_db(nbddf=neigh_dataframe, tablename='neigh_data')
+    >>> df2 = get_db_data(
+    ...                   engine=engine, tablename='neigh_data', nbdname='nbd', 
+    ...                   latname='latitude', longname='longitude', datename='date'
+    ... )
     
     """
         
@@ -97,25 +151,58 @@ def get_db_data(engine, tablename='data', nbdname=None, latname='latitude', long
     
     return df
     
-def make_db(nbddf, name=None):
+def make_db(nbddf, dbname=None, tablename='nbddata'):
     """
     Write :class:`NBDDataFrame` data into a SQLite database.
     
     Parameters:
     ___________
     
-    :param NBDDataFrame nbddf: the :class:`NBDDataFrame` object containing the data
-    :param str name: the name of the database; if no name is given, the database will be in-memory-only, default is None
+    :param NBDDataFrame nbddf: 
+        the :class:`NBDDataFrame` object containing the data
+        
+    :param str dbname: 
+        the name of the database; if no name is given, 
+        the database will be in-memory-only, default is None
+        
+    :param str tablename: 
+        the name of the table, default is 'nbddata'
+    
+    Returns:
+    ________
+    
+    :returns: an engine to the database
+    :rtype: sqlalchemy.engine.Engine
+    
+    For example,
+
+    >>> from datatools.nbddataframe import testdata, get_csv_data, NBDDataFrame, make_db
+    >>> fil = open('test.csv', 'w') #make a test csv file
+    >>> fil.write(testdata) #write data randomly generated for test purposes 
+    >>> fil.close()
+    >>> df = get_csv_data(
+    ...                   filename='test.csv', nbdname='neighborhood',
+    ...                   latname='lat', longname='lon', datename='date', sep='\t'
+    ... )
+    >>> neigh_dataframe = NBDDataFrame(df)
+    >>> engine = make_db(nbddf=neigh_dataframe, tablename='neigh_data')
+    >>> con = engine.connect()
+    >>> result = con.execute("select latitude from neigh_data where nbd = 'A'")
+    >>> data = result.fetchall()
+    >>> data[0][0]
+    3.5535197752
+    >>> con.close()
     
     """
-    
-    #make the engine and connection
-    if name is None:
+    #make the engine
+    if dbname is None:
         engine = create_engine('sqlite://')
     else:
-        engine = create_engine('sqlite:///{}.db'.format(name))
+        engine = create_engine('sqlite:///{}.db'.format(dbname))
     
-    conn = engine.connect()   
+    nbddf.get_df().to_sql(name=tablename, con=engine)
+    return engine    
+       
 
 class NBDDataFrame(object):
     """
@@ -124,11 +211,65 @@ class NBDDataFrame(object):
     Parameters:
     ___________
     
-    :param Dataframe df: The neighborhood data. At the least, it should have *nbd*, *latitude*, *longitude* and *date* columns.
+    :param pandas.core.frame.DataFrame df: 
+        the neighborhood data: at the least,
+        it should have *latitude*, *longitude* and *date* columns
+     
+    :param bool debug:
+        if True, produce verbose output; default is False
+        
+    Raises:
+    _______
+    
+    :raises Exception: if *df* does not have the required columns
+    
+    For example,
+    
+    >>> from datatools.nbddataframe import testdata, get_csv_data, NBDDataFrame
+    >>> fil = open('test.csv', 'w') #make a test csv file
+    >>> fil.write(testdata) #write data randomly generated for test purposes 
+    >>> fil.close()
+    >>> df = get_csv_data(
+    ...                   filename='test.csv', nbdname='neighborhood',
+    ...                   latname='lat', longname='lon', datename='date', sep='\t'
+    ... )
+    >>> nbddf = NBDDataFrame(df, debug=True)
+    The DataFrame is in the correct format
+    >>> nbddf = NBDDataFrame(df[['latitude', 'longitude']])
+    Traceback (most recent call last):
+        ...
+    Exception: DataFrame format error
+    
+    .. todo::
+       * function to add neighborhoods
+       * cleaning functions
+       * grouping functions
+       * normalization functions        
     
     """
     
-    def __init__(self):
-        pass
+    def __init__(self, df, debug=False):
+
+        self.df = df
+        required_cloumns = set(['latitude', 'longitude', 'date'])
+        if not required_cloumns.issubset(df.columns):
+            raise Exception('DataFrame format error')
+        elif debug:
+            print "The DataFrame is in the correct format"
+    
+    def get_info(self):
+        pass            
         
-         
+    def get_df(self):
+        """
+        Get the underlying pandas.core.frame.DataFrame.
+        
+        Returns:
+        ________
+        
+        :returns: the underlying pandas.core.frame.DataFrame
+        :rtype: pandas.core.frame.DataFrame
+        
+        """
+        
+        return self.df         

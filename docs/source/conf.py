@@ -290,3 +290,6 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None, 'http://scikit-learn.org/stable/' : None, 'http://docs.sqlalchemy.org/en/rel_0_9/' : None, 'http://pandas.pydata.org/pandas-docs/stable/' : None}
+
+# Include todos
+todo_include_todos = True

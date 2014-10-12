@@ -19,6 +19,9 @@ class NbdPred(object):
     >>> loc_and_n = [[0, 0, 'A'], [0, 1, 'A'], [2, 0, 'B'], [2, 1, 'B']] 
     >>> npred = NbdPred(loc_and_n)
     
+    .. todo::
+       Neighborhood graph
+    
     """
     
     def __init__(self, loc_and_n):
