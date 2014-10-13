@@ -22,6 +22,19 @@ val	lat	lon	rand	neighborhood	date
 -6.0590357706	0.8749491768	0.4776441725	0.5864697497	A	10/13/1987
 """
 
+#lat long bounds
+minlat = 47.5
+"""The default minimum latitude."""
+
+maxlat = 47.75
+"""The default maximum latitude."""
+
+minlong = -122.44
+"""The default minimum longitude."""
+
+maxlong = -122.2
+"""The default maximum longitude."""
+
 
 def get_csv_data(filename, nbdname=None, latname='latitude',
                  longname='longitude', datename='date', sep='\t'):
@@ -215,6 +228,18 @@ class NBDDataFrame(object):
     :param pandas.DataFrame df: 
         the neighborhood data: at the least,
         it should have *latitude*, *longitude* and *date* columns
+        
+    :param float min_lat:
+        the minimum considered latitude, default is :attr:`minlat`
+
+    :param float max_lat:
+        the maximum considered latitude, default is :attr:`maxlat`
+
+    :param float min_long:
+        the minimum considered longitude, default is :attr:`minlong`
+
+    :param float max_long:
+        the maximum considered longitude, default is :attr:`maxlong`
      
     :param bool debug:
         if True, produce verbose output; default is False
@@ -240,11 +265,12 @@ class NBDDataFrame(object):
 
     To print missing data info,
     
-    >>> nbddf = NBDDataFrame(testdataframe)
+    >>> nbddf = NBDDataFrame(testdataframe, min_lat=-8, max_long=9)
     >>> print nbddf.print_info()
     The number of rows is 13.
     2 rows are missing val.
     1 rows are missing longitude.
+    3 rows have out-of-bounds location.
     
     To remove rows with missing location or date data,
      
@@ -252,6 +278,15 @@ class NBDDataFrame(object):
     >>> print nbddf.print_info()
     The number of rows is 12.
     2 rows are missing val.
+    3 rows have out-of-bounds location.
+    
+    To remove rows with out-of-bounds locations,
+    
+    >>> nbddf.remove_outofbounds_data()
+    >>> print nbddf.print_info()
+    The number of rows is 9.
+    1 rows are missing val.
+
     
     .. todo::
        * function to add neighborhoods
@@ -261,7 +296,7 @@ class NBDDataFrame(object):
     
     """
     
-    def __init__(self, df, debug=False):
+    def __init__(self, df, min_lat=minlat, max_lat=maxlat, min_long=minlong, max_long=maxlong, debug=False):
 
         self.df = df
         required_cloumns = set(['latitude', 'longitude', 'date'])
@@ -269,10 +304,16 @@ class NBDDataFrame(object):
             raise Exception('DataFrame format error')
         elif debug:
             print "The DataFrame is in the correct format"
+            
+        self.min_lat = min_lat
+        self.max_lat = max_lat
+        self.min_long = min_long
+        self.max_long = max_long
+            
     
     def print_info(self):
         """
-        Print the number of rows and number of missing values for each column.
+        Print the number of rows, number of missing values for each column, and number of rows with location out of bounds.
         
         Returns:
         ________
@@ -281,14 +322,21 @@ class NBDDataFrame(object):
         :rtype: str
         
         """
+        df = self.get_df()
         
-        count = self.get_df().count()
-        num_rows = max(count.values)
+        count = df.count()
+        num_rows = len(df)
         printstr = "The number of rows is {}.\n".format(num_rows)
         missing_count = num_rows - count
         for col in missing_count.index:
             if missing_count[col] > 0:
                 printstr += "{num} rows are missing {colu}.\n".format(num=missing_count[col], colu=col)
+
+        out_of_bounds = len(df[(df.latitude < self.min_lat) | (df.latitude > self.max_lat) | (df.longitude < self.min_long) | (df.longitude > self.max_long)])
+
+        if out_of_bounds > 0:
+            printstr += "{num} rows have out-of-bounds location.\n".format(num=out_of_bounds)                
+                
         return printstr[:-1]
                 
     def remove_missing_data(self):
@@ -299,6 +347,14 @@ class NBDDataFrame(object):
         
         self.df.replace({'latitude' : 0, 'longitude' : 0}, None)
         self.df = self.df[(self.df.date.notnull()) & (self.df.latitude.notnull()) & (self.df.longitude.notnull())]
+        
+    def remove_outofbounds_data(self):
+        """
+        Remove rows with out-of-bounds locations.
+        
+        """
+        
+        self.df = self.df[(self.df.latitude >= self.min_lat) & (self.df.latitude <= self.max_lat) & (self.df.longitude >= self.min_long) & (self.df.longitude <= self.max_long)]    
                                    
         
     def get_df(self):
