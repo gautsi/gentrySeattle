@@ -151,7 +151,7 @@ def get_db_data(engine, tablename='nbddata', nbdname=None,
     
     """
         
-    df = pd.read_sql_table(table_name=tablename, con=engine, parse_dates=[datename])
+    df = pd.read_sql_table(table_name=tablename, con=engine, parse_dates=[datename], index_col=index_col)
     df.rename(columns={latname:'latitude', longname:'longitude', datename:'date'}, inplace=True)
     if nbdname:
         df.rename(columns={nbdname:'nbd'}, inplace=True)
@@ -238,14 +238,20 @@ class NBDDataFrame(object):
         ...
     Exception: DataFrame format error
 
-    We can print missing data info.
+    To print missing data info,
     
-    >>> nbddf = NBDDataFrame(testdataframe, debug=True)
+    >>> nbddf = NBDDataFrame(testdataframe)
     >>> print nbddf.print_info()
     The number of rows is 13.
     2 rows are missing val.
     1 rows are missing longitude.
-
+    
+    To remove rows with missing location or date data,
+     
+    >>> nbddf.remove_missing_data()
+    >>> print nbddf.print_info()
+    The number of rows is 12.
+    2 rows are missing val.
     
     .. todo::
        * function to add neighborhoods
@@ -286,7 +292,13 @@ class NBDDataFrame(object):
         return printstr[:-1]
                 
     def remove_missing_data(self):
-        pass
+        """
+        Remove rows with missing location or date data.
+        
+        """
+        
+        self.df.replace({'latitude' : 0, 'longitude' : 0}, None)
+        self.df = self.df[(self.df.date.notnull()) & (self.df.latitude.notnull()) & (self.df.longitude.notnull())]
                                    
         
     def get_df(self):
