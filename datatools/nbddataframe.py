@@ -52,7 +52,8 @@ def get_csv_data(filename, nbdname=None, latname='latitude',
         the name of the csv file
         
     :param str nbdname: 
-        (optional) the name of the neighborhood column is there is one, default is None
+        (optional) the name of the neighborhood column
+        if there is one, default is None
     
     :param str latname: 
         the name of the latitude column, default is 'latitude'
@@ -80,7 +81,8 @@ def get_csv_data(filename, nbdname=None, latname='latitude',
     >>> fil.close()
     >>> df = get_csv_data(
     ...                   filename='test.csv', nbdname='neighborhood',
-    ...                   latname='lat', longname='lon', datename='date', sep='\t'
+    ...                   latname='lat', longname='lon', datename='date', 
+    ...                   sep='\t'
     ... )
     >>> df.head()
             val  latitude  longitude      rand nbd       date
@@ -97,7 +99,8 @@ def get_csv_data(filename, nbdname=None, latname='latitude',
     """
 
     df = pd.read_csv(filename, sep='\t', parse_dates=[datename])
-    df.rename(columns={latname:'latitude', longname:'longitude', datename:'date'}, inplace=True)
+    df.rename(columns={latname:'latitude', longname:'longitude',
+                       datename:'date'}, inplace=True)
     if nbdname:
         df.rename(columns={nbdname:'nbd'}, inplace=True)
     
@@ -112,12 +115,14 @@ testdataframe = get_csv_data(
 
 
 def get_db_data(engine, tablename='nbddata', nbdname=None, 
-                latname='latitude', longname='longitude', datename='date', index_col=None):
+                latname='latitude', longname='longitude', datename='date',
+                index_col=None):
     """
     Read neighborhood data from a database into a pandas.DataFrame 
     compatible with :class:`NBDDataFrame`. The table should have at the least 
     latitude and longitude columns with names *latname* and *longname*, and a 
-    date column with name *datename*. A neighborhood column with name *nbdname* is optional.
+    date column with name *datename*. A neighborhood column with name 
+    *nbdname* is optional.
     
     Parameters:
     ___________
@@ -152,20 +157,23 @@ def get_db_data(engine, tablename='nbddata', nbdname=None,
     
     For example,
 
-    >>> from datatools.nbddataframe import testdataframe, NBDDataFrame, make_db, get_db_data
+    >>> from datatools.nbddataframe import testdataframe, NBDDataFrame
+    >>> from datatools.nbddataframe import make_db, get_db_data
     >>> neigh_dataframe = NBDDataFrame(testdataframe)
     >>> engine = make_db(nbddf=neigh_dataframe, tablename='neigh_data')
-    >>> df2 = get_db_data(
-    ...                   engine=engine, tablename='neigh_data', nbdname='nbd', 
-    ...                   latname='latitude', longname='longitude', datename='date'
+    >>> df2 = get_db_data(engine=engine, tablename='neigh_data', 
+    ...                   nbdname='nbd', latname='latitude', 
+    ...                   longname='longitude', datename='date'
     ... )
     >>> df2.loc[1, 'nbd']
     u'A'
     
     """
         
-    df = pd.read_sql_table(table_name=tablename, con=engine, parse_dates=[datename], index_col=index_col)
-    df.rename(columns={latname:'latitude', longname:'longitude', datename:'date'}, inplace=True)
+    df = pd.read_sql_table(table_name=tablename, con=engine,
+                           parse_dates=[datename], index_col=index_col)
+    colrndict = {latname:'latitude', longname:'longitude', datename:'date'}
+    df.rename(columns=colrndict, inplace=True)
     if nbdname:
         df.rename(columns={nbdname:'nbd'}, inplace=True)
     
@@ -197,12 +205,13 @@ def make_db(nbddf, dbname=None, tablename='nbddata'):
     
     For example,
 
-    >>> from datatools.nbddataframe import testdataframe, NBDDataFrame, make_db
+    >>> from datatools.nbddataframe import testdataframe, NBDDataFrame
+    >>> from datatools.nbddataframe import make_db
     >>> neigh_dataframe = NBDDataFrame(testdataframe)
     >>> engine = make_db(nbddf=neigh_dataframe, tablename='neigh_data')
     >>> con = engine.connect()
-    >>> result = con.execute("select latitude from neigh_data where nbd = 'A'")
-    >>> data = result.fetchall()
+    >>> res = con.execute("select latitude from neigh_data where nbd = 'A'")
+    >>> data = res.fetchall()
     >>> data[0][0]
     3.5535197752
     >>> con.close()
@@ -292,11 +301,14 @@ class NBDDataFrame(object):
        * function to add neighborhoods
        * cleaning functions
        * grouping functions
-       * normalization functions        
+       * vis/analysis functions
+       * normalization functions
+       * Use shapefiles to get nbd instead of nearest-nbr predictor.          
     
     """
     
-    def __init__(self, df, min_lat=minlat, max_lat=maxlat, min_long=minlong, max_long=maxlong, debug=False):
+    def __init__(self, df, min_lat=minlat, max_lat=maxlat, min_long=minlong,
+                 max_long=maxlong, debug=False):
 
         self.df = df
         required_cloumns = set(['latitude', 'longitude', 'date'])
@@ -313,7 +325,8 @@ class NBDDataFrame(object):
     
     def print_info(self):
         """
-        Print the number of rows, number of missing values for each column, and number of rows with location out of bounds.
+        Print the number of rows, number of missing values for each column,
+        and number of rows with location out of bounds.
         
         Returns:
         ________
@@ -330,12 +343,18 @@ class NBDDataFrame(object):
         missing_count = num_rows - count
         for col in missing_count.index:
             if missing_count[col] > 0:
-                printstr += "{num} rows are missing {colu}.\n".format(num=missing_count[col], colu=col)
+                missstr = "{num} rows are missing {colu}.\n"
+                printstr += missstr.format(num=missing_count[col], colu=col)
 
-        out_of_bounds = len(df[(df.latitude < self.min_lat) | (df.latitude > self.max_lat) | (df.longitude < self.min_long) | (df.longitude > self.max_long)])
+        out_of_bounds = len(df[(df.latitude < self.min_lat) | 
+                               (df.latitude > self.max_lat) |
+                               (df.longitude < self.min_long) | 
+                               (df.longitude > self.max_long)]
+        )
 
         if out_of_bounds > 0:
-            printstr += "{num} rows have out-of-bounds location.\n".format(num=out_of_bounds)                
+            ofbstr = "{num} rows have out-of-bounds location.\n"
+            printstr += ofbstr.format(num=out_of_bounds)                
                 
         return printstr[:-1]
                 
@@ -346,7 +365,10 @@ class NBDDataFrame(object):
         """
         
         self.df.replace({'latitude' : 0, 'longitude' : 0}, None)
-        self.df = self.df[(self.df.date.notnull()) & (self.df.latitude.notnull()) & (self.df.longitude.notnull())]
+        self.df = self.df[(self.df.date.notnull()) & 
+                          (self.df.latitude.notnull()) & 
+                          (self.df.longitude.notnull())
+        ]
         
     def remove_outofbounds_data(self):
         """
@@ -354,9 +376,29 @@ class NBDDataFrame(object):
         
         """
         
-        self.df = self.df[(self.df.latitude >= self.min_lat) & (self.df.latitude <= self.max_lat) & (self.df.longitude >= self.min_long) & (self.df.longitude <= self.max_long)]    
-                                   
+        self.df = self.df[(self.df.latitude >= self.min_lat) & 
+                          (self.df.latitude <= self.max_lat) & 
+                          (self.df.longitude >= self.min_long) & 
+                          (self.df.longitude <= self.max_long)
+        ]    
+   
+    def rowcount_vs_month(self, ax):
+        """
+        Plot the number of rows vs month.
         
+        Parameters:
+        ___________
+        
+        :param matplotlib.axes.AxesSubplot ax: the subplot to plot on
+        
+        """
+        
+        numrowsbydate = self.df[['date']].groupby(self.df.date).count()
+        resamplebymonth = numrowsbydate.resample("M", how="sum")
+        ax.plot(resamplebymonth.index, resamplebymonth)
+        ax.set_title("Row count by month")
+
+                
     def get_df(self):
         """
         Get the underlying DataFrame.

@@ -7,5 +7,5 @@ Todo list
 =========
 
 .. todolist::
-   
+
 
