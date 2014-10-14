@@ -1,25 +1,29 @@
 import pandas as pd
 from sqlalchemy import create_engine, MetaData
 from StringIO import StringIO
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+
+pd.options.display.mpl_style = 'default'
 
 
 #data string for testing purposes
 testdata=\
 """\
 val	lat	lon	rand	neighborhood	date
-4.0764441201	-0.9679426951	-0.6185285002	0.1276587849	B	1/1/2000
-4.2520509753	3.5535197752	5.001326357	0.8755922036	A	6/20/1986
-1.3226973685	-3.5350695765	-0.3033337044	0.3654616242	B	10/13/1987
--9.3627561629	-0.6945184339	9.1157019185	0.0957500809	B	1/1/2000
-	5.4958742624	1.1164685618	0.1716343011	B	1/1/2000
--5.911734812	9.7288561845		0.0838911855	B	1/1/2000
-4.7337248223	-8.3418089943	-0.3266175743	0.9184924145	A	6/20/1986
--9.5657038502	-3.7161306571	-7.3132784897	0.2555611331	B	1/1/2000
--6.5947027411	-2.9771319823	0.2907772316	0.3693092365	B	10/13/1987
-3.5680261068	-1.1769245192	-6.236623642	0.6814667757	A	6/20/1986
--0.4510013713	7.2112883069	-3.3197442209	0.9224957069	A	6/20/1986
-	-8.637564606	-1.0909260344	0.4966851496	B	10/13/1987
--6.0590357706	0.8749491768	0.4776441725	0.5864697497	A	10/13/1987
+4.0764441201	47.600025185	-122.373927686	0.1276587849	B	1/1/2000
+4.2520509753	47.4	-122.3413044916	0.8755922036	A	6/20/1986
+1.3226973685	47.634555916	-122.3442923659	0.3654616242	B	10/13/1987
+-9.3627561629	47.6509594572	-122.2993523445	0.0957500809	B	1/1/2000
+	47.5445857933	-122.3436249441	0.1716343011	B	1/1/2000
+-5.911734812	47.5112812526		0.0838911855	B	1/1/2000
+4.7337248223	47.6178126252	-122.3997977501	0.9184924145	A	6/20/1986
+-9.5657038502	47.5267191329	-122.1	0.2555611331	B	1/1/2000
+-6.5947027411	47.72339967	-122.3703101539	0.3693092365	B	10/13/1987
+3.5680261068	47.7431436405	-122.3081758471	0.6814667757	A	6/20/1986
+-0.4510013713	47.7208316866	-122.2663515676	0.9224957069	A	6/20/1986
+	47.5186485248	-122.3297974329	0.4966851496	B	10/13/1987
+-6.0590357706	47.5794698747	-122.4396772129	0.5864697497	A	10/13/1987
 """
 
 #lat long bounds
@@ -34,6 +38,45 @@ minlong = -122.44
 
 maxlong = -122.2
 """The default maximum longitude."""
+
+def rename_cols(df, nbdname=None, latname='latitude',
+                longname='longitude', datename='date'):
+    """
+    Rename the longitude, latitude, date and nbd (if there is one)
+    columns to make the DataFrame *df* compatible with 
+    :class:`NBDDataFrame`.
+    
+    Parameters:
+    ___________
+    
+    :param str nbdname: 
+        (optional) the name of the neighborhood column
+        if there is one, default is None
+    
+    :param str latname: 
+        the name of the latitude column, default is 'latitude'
+    
+    :param str longname: 
+        the name of the longitude column, default is 'longitude'
+    
+    :param str datename: 
+        the name of the date column, default is 'date'
+        
+    Returns:
+    ________
+    
+    :return: a pandas.DataFrame compatible with :class:`NBDDataFrame`
+    :rtype: pandas.DataFrame
+
+    """     
+    
+    newdf = df.rename(columns={latname:'latitude', longname:'longitude',
+                       datename:'date'})
+    if nbdname:
+        newdf.rename(columns={nbdname:'nbd'}, inplace=True)
+    
+    return newdf
+    
 
 
 def get_csv_data(filename, nbdname=None, latname='latitude',
@@ -85,16 +128,16 @@ def get_csv_data(filename, nbdname=None, latname='latitude',
     ...                   sep='\t'
     ... )
     >>> df.head()
-            val  latitude  longitude      rand nbd       date
-    0  4.076444 -0.967943  -0.618529  0.127659   B 2000-01-01
-    1  4.252051  3.553520   5.001326  0.875592   A 1986-06-20
-    2  1.322697 -3.535070  -0.303334  0.365462   B 1987-10-13
-    3 -9.362756 -0.694518   9.115702  0.095750   B 2000-01-01
-    4       NaN  5.495874   1.116469  0.171634   B 2000-01-01
+            val   latitude   longitude      rand nbd       date
+    0  4.076444  47.600025 -122.373928  0.127659   B 2000-01-01
+    1  4.252051  47.400000 -122.341304  0.875592   A 1986-06-20
+    2  1.322697  47.634556 -122.344292  0.365462   B 1987-10-13
+    3 -9.362756  47.650959 -122.299352  0.095750   B 2000-01-01
+    4       NaN  47.544586 -122.343625  0.171634   B 2000-01-01
     >>> df.loc[0, 'nbd']
     'B'
     >>> df.mean().loc['latitude']
-    -0.24481567373846144
+    47.597802519907695
         
     """
 
@@ -213,7 +256,7 @@ def make_db(nbddf, dbname=None, tablename='nbddata'):
     >>> res = con.execute("select latitude from neigh_data where nbd = 'A'")
     >>> data = res.fetchall()
     >>> data[0][0]
-    3.5535197752
+    47.4
     >>> con.close()
     
     """
@@ -249,7 +292,7 @@ class NBDDataFrame(object):
 
     :param float max_long:
         the maximum considered longitude, default is :attr:`maxlong`
-     
+        
     :param bool debug:
         if True, produce verbose output; default is False
         
@@ -274,12 +317,12 @@ class NBDDataFrame(object):
 
     To print missing data info,
     
-    >>> nbddf = NBDDataFrame(testdataframe, min_lat=-8, max_long=9)
+    >>> nbddf = NBDDataFrame(testdataframe)
     >>> print nbddf.print_info()
     The number of rows is 13.
     2 rows are missing val.
     1 rows are missing longitude.
-    3 rows have out-of-bounds location.
+    2 rows have out-of-bounds location.
     
     To remove rows with missing location or date data,
      
@@ -287,14 +330,19 @@ class NBDDataFrame(object):
     >>> print nbddf.print_info()
     The number of rows is 12.
     2 rows are missing val.
-    3 rows have out-of-bounds location.
+    2 rows have out-of-bounds location.
     
     To remove rows with out-of-bounds locations,
     
     >>> nbddf.remove_outofbounds_data()
     >>> print nbddf.print_info()
-    The number of rows is 9.
-    1 rows are missing val.
+    The number of rows is 10.
+    2 rows are missing val.
+    
+    Preliminary plots:
+    
+    >>> nbddf.plot_rowcount_by_month()
+    >>> nbddf.plot_map()
 
     
     .. todo::
@@ -307,10 +355,11 @@ class NBDDataFrame(object):
     
     """
     
-    def __init__(self, df, min_lat=minlat, max_lat=maxlat, min_long=minlong,
+    def __init__(self, df, min_lat=minlat, max_lat=maxlat, min_long=minlong, 
                  max_long=maxlong, debug=False):
 
         self.df = df
+        
         required_cloumns = set(['latitude', 'longitude', 'date'])
         if not required_cloumns.issubset(df.columns):
             raise Exception('DataFrame format error')
@@ -321,6 +370,8 @@ class NBDDataFrame(object):
         self.max_lat = max_lat
         self.min_long = min_long
         self.max_long = max_long
+
+        self.seattlemap = None            
             
     
     def print_info(self):
@@ -380,24 +431,80 @@ class NBDDataFrame(object):
                           (self.df.latitude <= self.max_lat) & 
                           (self.df.longitude >= self.min_long) & 
                           (self.df.longitude <= self.max_long)
-        ]    
+        ]
+            
    
-    def rowcount_vs_month(self, ax):
+    def plot_rowcount_by_month(self, df=None,
+                               filename="rowcount_by_month.png"):
         """
-        Plot the number of rows vs month.
+        Plot the number of rows by month.
         
         Parameters:
         ___________
         
-        :param matplotlib.axes.AxesSubplot ax: the subplot to plot on
+        :param DataFrame df:
+            the data to plot: if None, 
+            then this object's underlying DataFrame is used, 
+            default is None
+        
+        :param str filename: 
+            the name of the file with the plot, 
+            default is "rowcount_by_month.png"
         
         """
         
-        numrowsbydate = self.df[['date']].groupby(self.df.date).count()
+        if df is None:
+            df = self.get_df()
+            
+        ax = plt.subplot(111)
+        numrowsbydate = df[['date']].groupby(df.date).count()
         resamplebymonth = numrowsbydate.resample("M", how="sum")
         ax.plot(resamplebymonth.index, resamplebymonth)
         ax.set_title("Row count by month")
+        plt.savefig(filename, dpi=200)
+        plt.clf()
+        
+        
+    def plot_map(self, df=None, filename="row_locations_map.png"):
+        """
+        Plot the number of rows by month.
+        
+        Parameters:
+        ___________
+        
+        :param DataFrame df:
+            the data to plot: if None, 
+            then this object's underlying DataFrame is used, 
+            default is None
+        
+        :param str filename: 
+            the name of the file with the plot, 
+            default is "rowcount_by_month.png"
+        
+        """
 
+        if df is None:
+            df = self.get_df()
+            
+        self.setup_map()    
+        
+        locax = plt.subplot(111)                              
+        self.seattlemap.drawcoastlines(ax=locax)
+        locax.scatter(df.longitude, df.latitude, s=8, marker='.')
+        locax.set_title("Locations")
+        plt.savefig(filename, dpi=200)
+        plt.clf()
+                     
+                
+    def setup_map(self):
+    
+        if self.seattlemap is None:
+            self.seattlemap = Basemap(
+                                      llcrnrlon = self.min_long, 
+                                      llcrnrlat = self.min_lat, 
+                                      urcrnrlon = self.max_long, 
+                                      urcrnrlat = self.max_lat, 
+                                      resolution='i')
                 
     def get_df(self):
         """
@@ -411,4 +518,4 @@ class NBDDataFrame(object):
         
         """
         
-        return self.df         
+        return self.df
