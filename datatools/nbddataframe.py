@@ -42,9 +42,9 @@ maxlong = -122.2
 def rename_cols(df, nbdname=None, latname='latitude',
                 longname='longitude', datename='date'):
     """
-    Rename the longitude, latitude, date and nbd (if there is one)
-    columns to make the DataFrame *df* compatible with 
-    :class:`NBDDataFrame`.
+    Rename the longitude, latitude, date (and convert to time type)
+    and nbd (if there is one) columns to make the DataFrame *df* 
+    compatible with :class:`NBDDataFrame`.
     
     Parameters:
     ___________
@@ -75,6 +75,8 @@ def rename_cols(df, nbdname=None, latname='latitude',
     if nbdname:
         newdf.rename(columns={nbdname:'nbd'}, inplace=True)
     
+    newdf['date'] = pd.to_datetime(newdf['date'])    
+           
     return newdf
     
 
@@ -485,8 +487,9 @@ class NBDDataFrame(object):
 
         if df is None:
             df = self.get_df()
-            
-        self.setup_map()    
+        
+        if self.seattlemap is None:    
+            self.setup_map()    
         
         locax = plt.subplot(111)                              
         self.seattlemap.drawcoastlines(ax=locax)
@@ -498,13 +501,11 @@ class NBDDataFrame(object):
                 
     def setup_map(self):
     
-        if self.seattlemap is None:
-            self.seattlemap = Basemap(
-                                      llcrnrlon = self.min_long, 
-                                      llcrnrlat = self.min_lat, 
-                                      urcrnrlon = self.max_long, 
-                                      urcrnrlat = self.max_lat, 
-                                      resolution='i')
+        self.seattlemap = Basemap(llcrnrlon = self.min_long, 
+                                  llcrnrlat = self.min_lat, 
+                                  urcrnrlon = self.max_long, 
+                                  urcrnrlat = self.max_lat, 
+                                  resolution='i')
                 
     def get_df(self):
         """
